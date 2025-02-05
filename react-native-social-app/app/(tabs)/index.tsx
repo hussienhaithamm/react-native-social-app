@@ -1,11 +1,34 @@
-import { Image, StyleSheet, Platform } from 'react-native';
-
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
+import { FlatList, ActivityIndicator, StyleSheet, Image, Platform } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
+import { PostCard } from '@/components/PostCard';
+import { api } from '@/lib/api';
 import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '@/components/ThemedText';
+import ParallaxScrollView from '@/components/ParallaxScrollView';
+import { HelloWave } from '@/components/HelloWave';
 
 export default function HomeScreen() {
+  const { data: posts, isLoading, error } = useQuery({
+    queryKey: ['posts'],
+    queryFn: api.getPosts,
+  });
+
+  if (isLoading) {
+    return (
+      <ThemedView style={styles.centered}>
+        <ActivityIndicator size="large" />
+      </ThemedView>
+    );
+  }
+
+  if (error) {
+    return (
+      <ThemedView style={styles.centered}>
+        <ThemedText>Failed to load posts</ThemedText>
+      </ThemedView>
+    );
+  }
+
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
@@ -15,6 +38,7 @@ export default function HomeScreen() {
           style={styles.reactLogo}
         />
       }>
+      {/* Welcome Section */}
       <ThemedView style={styles.titleContainer}>
         <ThemedText type="title">Welcome!</ThemedText>
         <HelloWave />
@@ -28,7 +52,7 @@ export default function HomeScreen() {
             {Platform.select({
               ios: 'cmd + d',
               android: 'cmd + m',
-              web: 'F12'
+              web: 'F12',
             })}
           </ThemedText>{' '}
           to open developer tools.
@@ -50,19 +74,42 @@ export default function HomeScreen() {
           <ThemedText type="defaultSemiBold">app-example</ThemedText>.
         </ThemedText>
       </ThemedView>
+
+      {/* Posts Section */}
+      <ThemedView style={styles.postsContainer}>
+        <ThemedText type="title" style={styles.postsTitle}>
+          Latest Posts
+        </ThemedText>
+        <FlatList
+          data={posts}
+          renderItem={({ item }) => <PostCard post={item} />}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.list}
+          scrollEnabled={false} // Disable scrolling since ParallaxScrollView handles it
+        />
+      </ThemedView>
     </ParallaxScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  list: {
+    paddingVertical: 8,
+  },
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    marginBottom: 16,
   },
   stepContainer: {
     gap: 8,
-    marginBottom: 8,
+    marginBottom: 16,
   },
   reactLogo: {
     height: 178,
@@ -70,5 +117,11 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     position: 'absolute',
+  },
+  postsContainer: {
+    marginTop: 24,
+  },
+  postsTitle: {
+    marginBottom: 16,
   },
 });
